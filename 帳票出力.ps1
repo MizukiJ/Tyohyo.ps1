@@ -26,14 +26,36 @@ trap {
 
 
 # ================================================================
-#                       変数定義（スクリプトスコープ）
+#   　　　　　　　　　　　iniファイル読み込み
 # ================================================================
+
+# 現在実行中のスクリプトファイルが存在するディレクトリのパスを取得
+# PS1では $PSScriptRoot が使えないため、この方法を使用
+$scriptDirectory = (Get-Item $MyInvocation.MyCommand.Path).Directory.FullName
+$functionsPath = Join-Path -Path $scriptDirectory -ChildPath "Functions"
+
+# 関数を定義したファイルをドットソーシングで読み込み
+# これにより、関数がこのスクリプト内で利用可能になります
+. (Join-Path -Path $functionsPath -ChildPath "Get-IniContent.ps1")
+
+# 同じフォルダにある settings.ini ファイルのフルパスを生成
+$iniFilePath = Join-Path -Path $scriptDirectory -ChildPath "settings.ini"
+
+# Get-IniContent 関数を使って INIファイルから設定を読み込む
+$mySettings = Get-IniContent -Path $iniFilePath
+
 # ログファイルのパスを設定
-$logFile = "C:\GenesisBatch\自由帳票\ErrorLog.log"
+$logFile = $mySettings.filePath.logFile
 
 # データベース接続情報
-$serverName = "7D-BIM-FREEDOM\SQLEXPRESS2019" # インスタンス名
-$databaseName = "Tyohyo" # データベース名
+$serverName = $mySettings.settingSQL.serverName
+$databaseName = $mySettings.settingSQL.databaseName
+
+
+
+# ================================================================
+#                       変数定義（スクリプトスコープ）
+# ================================================================
 
 # Excel定義
 $WorkbookPath = "C:\GenesisBatch\自由帳票\0_WorkSpace.xlsm"
