@@ -26,7 +26,7 @@ trap {
 
 
 # ================================================================
-#   　　　　　　　　　　　iniファイル読み込み
+#   　　　　　　　　　　　パス/Function読込
 # ================================================================
 
 # 現在実行中のスクリプトファイルが存在するディレクトリのパスを取得
@@ -37,10 +37,16 @@ $functionsPath = Join-Path -Path $scriptDirectory -ChildPath "Functions"
 # 関数を定義したファイルをドットソーシングで読み込み
 # これにより、関数がこのスクリプト内で利用可能になります
 . (Join-Path -Path $functionsPath -ChildPath "Get-IniContent.ps1")
+. (Join-Path -Path $functionsPath -ChildPath "outputLogg.ps1")
+
+
+
+# ================================================================
+#   　　　　　　　 iniファイル読み込み/変数定義
+# ================================================================
 
 # 同じフォルダにある settings.ini ファイルのフルパスを生成
 $iniFilePath = Join-Path -Path $scriptDirectory -ChildPath "settings.ini"
-
 # Get-IniContent 関数を使って INIファイルから設定を読み込む
 $mySettings = Get-IniContent -Path $iniFilePath
 
@@ -51,16 +57,10 @@ $logFile = $mySettings.filePath.logFile
 $serverName = $mySettings.settingSQL.serverName
 $databaseName = $mySettings.settingSQL.databaseName
 
-
-
-# ================================================================
-#                       変数定義（スクリプトスコープ）
-# ================================================================
-
-# Excel定義
-$WorkbookPath = "C:\GenesisBatch\自由帳票\0_WorkSpace.xlsm"
-#$MacroName = "testCall_Nip" # Excel VBA側のマクロ名を指定
-# $para = "test" # Excel マクロのパラメータ
+# マクロのパスを設定
+$WorkbookPath = $mySettings.filePath.WorkbookPath
+$MacroName = $null # Excel VBAのマクロ名を指定
+$para = $null # Excel VBAのマクロのパラメータ
 
 # 接続文字列
 $connectionString = "Server=$serverName;Database=$databaseName;Integrated Security=True;" # Windows認証
@@ -78,7 +78,7 @@ $workbook = $null # 初期化
 
 
 # ================================================================
-#                             ログ出力
+#                      ログディレクトリ確認
 # ================================================================
 # ログディレクトリが存在しない場合は作成する
 $logDirectory = Split-Path -Path $logFile -Parent
@@ -92,33 +92,6 @@ if (-not (Test-Path -Path $logDirectory -PathType Container)) {
         Exit # ディレクトリ作成失敗時は終了
     }
 }
-
-# ログ出力関数 (ログレベル対応版)
-function outputLogg {
-    param(
-        [Parameter(Mandatory=$true)]
-        [string]$Message,
-        [string]$Level = "INFO", # デフォルトはINFO
-        [string]$Source = "Powershell" # ログ出力元（例: DB_CONNECTION, SP_EXECUTIONなど）
-    )
-    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss" # ミリ秒まで含む
-    
-    # ログファイルに出力する形式
-    # [日時][レベル][ソース] メッセージ
-    $logEntry = "[$timestamp][$(($Level.ToUpper()).PadRight(5))][$(($Source.ToUpper()).PadRight(15))] $Message"
-    Add-Content -Path $logFile -Value $logEntry
-
-    # コンソール出力はログレベルによって色を変える
-    $consoleOutput = "[$timestamp][$(($Level.ToUpper()).PadRight(5))][$(($Source.ToUpper()).PadRight(15))] $Message"
-    switch ($Level.ToUpper()) {
-        "INFO"  { Write-Host $consoleOutput -ForegroundColor Green }    # 情報メッセージは緑
-        "WARN"  { Write-Host $consoleOutput -ForegroundColor Yellow }   # 警告メッセージは黄
-        "ERROR" { Write-Host $consoleOutput -ForegroundColor Red }      # エラーメッセージは赤
-        "FATAL" { Write-Host $consoleOutput -ForegroundColor White -BackgroundColor Red } # 致命的エラーは赤背景に白文字
-        default { Write-Host $consoleOutput } # その他のレベルはデフォルト色
-    }
-}
-
 
 
 # ================================================================
