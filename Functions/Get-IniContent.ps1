@@ -9,6 +9,7 @@
 この関数は、INIファイル（.ini）を解析し、セクションとキー-値のペアをPowerShellのハッシュテーブルに変換します。
 コメント行（セミコロン ';' またはシャープ '#' で始まる行）と空行はスキップされます。
 キー-値のペアは、セクション内またはINIファイルのルートレベルに配置できます。
+また、行の途中に記述されたインラインコメント（例: Key = Value ; コメント）も正しく処理されます。
 
 .PARAMETER Path
 読み込むINIファイルのパスを指定します。
@@ -37,11 +38,13 @@ if ($iniSettings) {
 # Version = 1.0
 # ; This is a comment
 # # Another comment
+# KeyWithInlineComment = Value ; This is an inline comment
 #
 # GlobalKey = GlobalValue
 
 .NOTES
 コメントは行頭に ';' または '#' を付けることで認識されます。
+行の途中のコメントも ';' または '#' で始まり、それ以降は無視されます。
 キーと値の間は '=' で区切られます。
 セクションは '[セクション名]' の形式で指定します。
 #>
@@ -76,6 +79,32 @@ function Get-IniContent {
             # コメント行 (セミコロン ';' またはシャープ '#' で始まる) や空行はスキップ
             if ($line.StartsWith(";") -or $line.StartsWith("#") -or [string]::IsNullOrWhiteSpace($line)) {
                 continue # 次の行へ
+            }
+
+            # インラインコメントの処理
+            # まず、行にコメント文字があるかを確認
+            $commentIndexSemicolon = $line.IndexOf(";")
+            $commentIndexHash = $line.IndexOf("#")
+
+            # 有効なコメントインデックスを見つける (非-1かつ最小のインデックス)
+            $commentIndex = -1
+            if ($commentIndexSemicolon -ne -1) {
+                $commentIndex = $commentIndexSemicolon
+            }
+            if ($commentIndexHash -ne -1) {
+                if ($commentIndex -eq -1 -or $commentIndexHash -lt $commentIndex) {
+                    $commentIndex = $commentIndexHash
+                }
+            }
+
+            # コメント文字が見つかった場合、その手前で文字列を切り詰める
+            if ($commentIndex -ne -1) {
+                $line = $line.Substring(0, $commentIndex).TrimEnd()
+            }
+
+            # 切り詰めた後に空行になった場合はスキップ
+            if ([string]::IsNullOrWhiteSpace($line)) {
+                continue
             }
 
             # セクションの検出 (例: [SectionName])
