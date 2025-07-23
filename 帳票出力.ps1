@@ -99,6 +99,8 @@ if (-not (Test-Path -Path $logDirectory -PathType Container)) {
 #                       メイン処理の開始
 # ================================================================
 try {
+    outputLogg "実行開始" -Level "INFO" -Source "Powershell"
+
     # 1. SqlConnection オブジェクトの作成とオープン
     $connection = New-Object System.Data.SqlClient.SqlConnection($connectionString)
     $connection.Open()
@@ -144,7 +146,7 @@ try {
     $command.ExecuteNonQuery() 
 
     # 5.完了通知
-    #outputLogg "ストアドプロシージャ '$($storedProcedureName_TyohyoOut)' の実行（日報）が完了しました。" -Level "INFO" -Source "SP_EXECUTION"
+    outputLogg "ストアドプロシージャ '$($storedProcedureName_TyohyoOut)' の実行（日報）が完了しました。" -Level "INFO" -Source "SP_EXECUTION"
 
     
     # ================================================================
@@ -155,8 +157,8 @@ try {
 
     # 警告ダイアログを表示しない（読み取り専用で開きますかを制御）
     $excel.DisplayAlerts = $false 
-    # Excelを非表示にする場合は $false に設定 (デバッグ中は $true)
-    $excel.Visible = $true 
+    # ★Excelを非表示にする場合は $false に設定 (デバッグ中は $true)
+    $excel.Visible = $false 
 
     # ワークブックを開く
     $workbook = $excel.Workbooks.Open($WorkbookPath)
