@@ -56,6 +56,7 @@ $logFile = $mySettings.filePath.logFile
 # データベース接続情報
 $serverName = $mySettings.settingSQL.serverName
 $databaseName = $mySettings.settingSQL.databaseName
+$commandTimeout = $mySettings.settingSQL.commandTimeout
 
 # マクロのパスを設定
 $WorkbookPath = $mySettings.filePath.WorkbookPath
@@ -112,6 +113,7 @@ try {
     # 2. SqlCommand オブジェクトの作成 (初回のみ)
     $command = New-Object System.Data.SqlClient.SqlCommand($storedProcedureName_PropImport, $connection)
     $command.CommandType = [System.Data.CommandType]::StoredProcedure # ストアドプロシージャを指定
+    $command.CommandTimeout = $commandTimeout # タイムアウト時間を設定
 
     # 3. SqlParameter オブジェクトの作成と追加 (入力パラメータ) がある場合
     # 例: $paramExample = $command.Parameters.Add("@YourParameterName", [System.Data.SqlDbType]::NVarChar, 100)
@@ -122,7 +124,7 @@ try {
     $command.ExecuteNonQuery() 
 
     # 5.完了通知
-    outputLogg "ストアドプロシージャ '$($storedProcedureName_PropImport)' の実行が完了しました。" -Level "INFO" -Source "SP_EXECUTION"
+    #outputLogg "ストアドプロシージャ '$($storedProcedureName_PropImport)' の実行が完了しました。" -Level "INFO" -Source "SP_EXECUTION"
 
 
     # ================================================================
@@ -142,7 +144,7 @@ try {
     $command.ExecuteNonQuery() 
 
     # 5.完了通知
-    outputLogg "ストアドプロシージャ '$($storedProcedureName_TyohyoOut)' の実行（日報）が完了しました。" -Level "INFO" -Source "SP_EXECUTION"
+    #outputLogg "ストアドプロシージャ '$($storedProcedureName_TyohyoOut)' の実行（日報）が完了しました。" -Level "INFO" -Source "SP_EXECUTION"
 
     
     # ================================================================
