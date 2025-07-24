@@ -1,4 +1,7 @@
-﻿# ================================================================
+﻿# 変更履歴
+# Ver1.00 20250724
+
+# ================================================================
 #             グローバルエラーハンドリング (trapブロック)
 # ================================================================
 trap {
@@ -98,7 +101,8 @@ if (-not (Test-Path -Path $logDirectory -PathType Container)) {
 # ================================================================
 #                       メイン処理の開始
 # ================================================================
-try {
+try { # sp_PropertyImportは失敗することが考えられる為、別のTry-Catchブロックとする
+    　# ★ただエラーが出たときに、値がnullになってしまうため、もしかしたらこれも問題がない初期CSVを用意する必要ある?
     outputLogg "実行開始" -Level "INFO" -Source "Powershell"
 
     # 1. SqlConnection オブジェクトの作成とオープン
@@ -127,8 +131,20 @@ try {
 
     # 5.完了通知
     #outputLogg "ストアドプロシージャ '$($storedProcedureName_PropImport)' の実行が完了しました。" -Level "INFO" -Source "SP_EXECUTION"
+}
+# SQLエラー時 (System.Data.SqlClient.SqlException)
+catch [System.Data.SqlClient.SqlException] {
+    $errorMessage = "SQL Error: $($_.Exception.Number) - $($_.Exception.Message)"
+    outputLogg $errorMessage -Level "ERROR" -Source "DB_OPERATION"
+}
+# その他のエラー処理
+catch {
+    $errorMessage = "予期せぬエラー: $($_.Exception.Message)"
+    outputLogg $errorMessage -Level "ERROR" -Source "SCRIPT_GENERAL" # Sourceを 'SCRIPT_GLOBAL' から 'SCRIPT_GENERAL' に変更
+}
 
 
+try {
     # ================================================================
     #                         SQL：日報出力
     # ================================================================
